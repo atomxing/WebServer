@@ -49,7 +49,7 @@ private:
 template<typename T>
 threadpool<T>::threadpool(int thread_number, int max_requests) : 
     m_thread_number(thread_number), m_max_requests(max_requests),
-    m_stop(false), m_thread(nullptr) {
+    m_stop(false), m_threads(nullptr) {
 
     if((thread_number <= 0) || (max_requests <= 0)) {
         throw std::exception();
@@ -64,7 +64,7 @@ threadpool<T>::threadpool(int thread_number, int max_requests) :
     for(int i = 0; i < thread_number; i++) {
         printf("create the %dth thread\n", i);
 
-        if( pthread_create(m_threads + i, nullptr, worker, nullptr) != 0){
+        if( pthread_create(m_threads + i, nullptr, worker, this) != 0 ){
         // worker必须是静态的函数
             delete[] m_threads;
             throw std::exception();
@@ -118,7 +118,7 @@ void threadpool<T>::run() {
         }
 
         T* request = m_workqueue.front();
-        m_workqueue.push_front();
+        m_workqueue.pop_front();
         m_queuelocker.unlock();
 
         if(!request) {
