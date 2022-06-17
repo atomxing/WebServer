@@ -109,10 +109,14 @@ int main(int argc, char* argv[]) {
 
                 // 新的客户的数据初始化，放到数组中
                 users[connfd].init(connfd, client_address);
-            } else if(events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
+            }
+            
+            else if(events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
             // 对方异常断开或错误等事件
                 users[sockfd].close_conn();
-            } else if(events[i].events & EPOLLIN) {
+            }
+
+            else if(events[i].events & EPOLLIN) {
             // 读数据
                 if(users[sockfd].read()) {
                 // 一次性把所有数据读出来
@@ -120,7 +124,9 @@ int main(int argc, char* argv[]) {
                 } else {
                     users[sockfd].close_conn(); // 失败了就关闭连接
                 }
-            } else if(events[i].events & EPOLLOUT) {
+            }
+            
+            else if(events[i].events & EPOLLOUT) {
                 if( !users[sockfd].write() ) {
                 // 一次性把所有数据写进去
                     users[sockfd].close_conn();

@@ -14,7 +14,8 @@ void setnonblocking(int fd) {
 void addfd(int epollfd, int fd, bool one_shot) {
     epoll_event event;
     event.data.fd = fd;
-    event.events = EPOLLIN | EPOLLRDHUP;    // EPOLLRDHUP 断开，挂起连接
+    //event.events = EPOLLIN | EPOLLRDHUP;    // EPOLLRDHUP 断开，挂起连接
+    event.events = EPOLLIN | EPOLLET | EPOLLRDHUP;  // 边缘触发
 
     if(one_shot) {
         event.events | EPOLLONESHOT;
@@ -63,8 +64,31 @@ void http_conn::close_conn() {
     }
 }
 
+// 循环读取客户数据，直到无数据可读或对方关闭连接
 bool http_conn::read() {
-    printf("一次性读完数据\n");
+    //printf("一次性读完数据\n");
+    if( m_read_index >= READ_BUFFER_SIZE) {
+        return false;
+    }
+
+    // 读取到的字节
+    int bytes_read = 0;
+    while(true) {
+        bytes_read = recv(m_socketfd, m_read_buf + m_read_index, READ_BUFFER_SIZE - m_read_index, 0);
+        if(bytes_read == -1) {
+            if(errno == EAGAIN || errno == EWOULDBLOCK) {
+                // 没有数据
+                break;
+            }
+            return false;
+        }
+        else if(bytes_read == 0) {
+            // 对方关闭连接
+            return false;
+        }
+        m_read_index += bytes_read;
+    }
+    printf("读取到了数据： %s\n", m_read_buf);
     return true;
 }
 
