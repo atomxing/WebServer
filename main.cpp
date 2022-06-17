@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
     int reuse = 1;
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
 
-    // 绑定
+    // 绑定old_option 
     struct sockaddr_in address;
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
                 // 新的客户的数据初始化，放到数组中
                 users[connfd].init(connfd, client_address);
             }
-            
+
             else if(events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
             // 对方异常断开或错误等事件
                 users[sockfd].close_conn();

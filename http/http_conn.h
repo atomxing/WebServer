@@ -88,7 +88,7 @@ private:
 
     HTTP_CODE process_read();  // 解析HTTP请求
     HTTP_CODE parse_request_line(char * text);  // 解析请求首行
-    HTTP_CODE parse_header(char * text);    // 解析请求头
+    HTTP_CODE parse_headers(char * text);    // 解析请求头
     HTTP_CODE parse_content(char * text);   // 解析请求体
     LINE_STATUS parse_line();    // 解析行
     char * get_line() { return m_read_buf + m_read_index; }

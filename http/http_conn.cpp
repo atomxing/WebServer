@@ -139,7 +139,7 @@ http_conn::HTTP_CODE http_conn::process_read() {
 
             case CHECK_STATE_HEADER:
             {
-                ret = parse_header(text);
+                ret = parse_headers(text);
                 if(ret == BAD_REQUEST) {
                     return BAD_REQUEST;
                 } else if(ret == GET_REQUEST) {
@@ -164,8 +164,6 @@ http_conn::HTTP_CODE http_conn::process_read() {
                 return INTERNAL_ERROR;
             }
         }
-
-        return NO_REQUEST;
     }
 
     return NO_REQUEST;
@@ -180,9 +178,9 @@ http_conn::HTTP_CODE http_conn::parse_request_line(char * text) {
 }
 
 // 解析请求头
-http_conn::HTTP_CODE http_conn::parse_header(char * text) {
+http_conn::HTTP_CODE http_conn::parse_headers(char * text) {
     // GET /index.html HTTP/1.1
-    m_url = strpbrk(text, "\t");    // 判断第一个字符先出现
+    m_url = strpbrk(text, " \t");    // 判断第一个字符先出现
 
     // GET\0/index.html HTTP/1.1
     *m_url++ = '\0';
@@ -249,15 +247,14 @@ http_conn::LINE_STATUS http_conn::parse_line() {
             }
             return LINE_BAD;
         }
-
-        return LINE_OPEN;
     }
 
-    return LINE_OK;
+    return LINE_OPEN;
 }
 
 http_conn::HTTP_CODE http_conn::do_request() {
 
+    //return ;
 }
 
 bool http_conn::write() {
