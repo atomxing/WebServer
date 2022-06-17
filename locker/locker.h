@@ -1,5 +1,5 @@
 #ifndef LOCKER_H
-#define LICKER_H
+#define LOCKER_H
 
 #include <pthread.h>	// 多进程 多线程
 #include <exception>	// 异常处理

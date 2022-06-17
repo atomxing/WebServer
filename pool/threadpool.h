@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 #include <list>
-#include "locker/locker.h"     // 互斥锁
+#include "../locker/locker.h"     // 互斥锁
 #include <exception>
 #include <cstdio>
 
@@ -35,7 +35,7 @@ private:
     std::list<T*> m_workqueue;
 
     // 互斥锁
-    lokcer m_queuelocker;
+    locker m_queuelocker;
 
     // 信号量 用来判断是否有任务需要处理
     sem m_queuestat;
@@ -55,7 +55,7 @@ threadpool<T>::threadpool(int thread_number, int max_requests) :
         throw std::exception();
     }
 
-    m_threads = new pthrea_t[m_thread_number];
+    m_threads = new pthread_t[m_thread_number];
     if(!m_threads) {
         throw std::exception();
     }
@@ -65,12 +65,13 @@ threadpool<T>::threadpool(int thread_number, int max_requests) :
         printf("create the %dth thread\n", i);
 
         if( pthread_create(m_threads + i, nullptr, worker, this) != 0 ){
+        // 这里传入this使得worker这个静态函数可以读取非静态变量
         // worker必须是静态的函数
             delete[] m_threads;
             throw std::exception();
         }
 
-        if( pthread_detach(m_thread[i]) ){
+        if( pthread_detach(m_threads[i]) ){
             delete[] m_threads;
             throw std::exception();
         }
@@ -87,13 +88,13 @@ template<typename T>
 bool threadpool<T>::append(T * request) {
 
     m_queuelocker.lock();
-    if(m_workqueue.size() > m_max_requests) {
-        m_queuestat.unlock();
-        return flase;
+    if( m_workqueue.size() > m_max_requests ) {
+        m_queuelocker.unlock();
+        return false;
     }
 
     m_workqueue.push_back(request);
-    m_queuestat.unlock();
+    m_queuelocker.unlock();
     m_queuestat.post();
     return true;
 }
@@ -111,7 +112,7 @@ template<typename T>
 void threadpool<T>::run() {
     while(!m_stop) {
         m_queuestat.wait();
-        m_queuestat.lock();
+        m_queuelocker.lock();
         if(m_workqueue.empty()) {
             m_queuelocker.unlock();
             continue;
