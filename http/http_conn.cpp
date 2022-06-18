@@ -213,9 +213,13 @@ http_conn::HTTP_CODE http_conn::parse_headers(char* text) {
     return NO_REQUEST;
 }
 
-// 解析请求体
-http_conn::HTTP_CODE http_conn::parse_content(char * text) {
-
+// 我们没有真正解析HTTP请求的消息体，只是判断它是否被完整的读入了
+http_conn::HTTP_CODE http_conn::parse_content( char* text ) {
+    if ( m_read_idx >= ( m_content_length + m_checked_idx ) )
+    {
+        text[ m_content_length ] = '\0';
+        return GET_REQUEST;
+    }
     return NO_REQUEST;
 }
 
