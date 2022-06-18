@@ -4,6 +4,9 @@
 int http_conn::m_epollfd = -1;   // 所有的socket上的事件都被注册到同一个epoll对象中
 int http_conn::m_user_count = 0;    // 统计用户的数量
 
+// 网站的根目录
+const char* doc_root = "./resources";
+
 // 设置文件描述符非阻塞
 void setnonblocking(int fd) {
     int old_flag = fcntl(fd, F_GETFL);
@@ -71,6 +74,7 @@ void http_conn::init() {
     m_linger = false;
 
     bzero(m_read_buf, READ_BUFFER_SIZE);
+    bzero(m_real_file, FILENAME_MAX);
 }
 
 // 关闭连接
@@ -253,9 +257,36 @@ http_conn::LINE_STATUS http_conn::parse_line() {
     return LINE_OPEN;
 }
 
+// 当得到一个完整、正确的HTTP请求时，我们就分析目标文件的属性，
+// 如果目标文件存在、对所有用户可读，且不是目录，则使用mmap将其
+// 映射到内存地址m_file_address处，并告诉调用者获取文件成功
 http_conn::HTTP_CODE http_conn::do_request() {
 
-    return NO_RESOURCE;
+    strcpy(m_real_file, doc_root);
+    int len = strlen(doc_root);
+    strncpy(m_real_file + len, m_url, FILENAME_LEN - len -1);
+    // 获取m_real_file文件的相关信息，-1失败，0成功
+    if(stat(m_real_file, &m_file_stat) < 0) {
+        return NO_RESOURCE;
+    }
+
+    // 判断访问权限
+    if( !(m_file_stat.st_mode & S_IROTH) ) {
+        return FORBIDDEN_REQUEST;
+    }
+    
+    // 判断是否是目录
+    if( S_ISDIR(m_file_stat.st_mode) ) {
+        return BAD_REQUEST;
+    }
+
+    // 以只读方式打开文件
+    int fd = open( m_real_file, O_RDONLY);
+    // 创建内存映射
+    m_file_address = (char*)mmap(0, m_file_stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    close(fd);
+
+    return FILE_REQUEST;
 }
 
 bool http_conn::write() {
