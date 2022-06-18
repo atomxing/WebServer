@@ -67,6 +67,7 @@ void http_conn::init() {
     m_method = GET;
     m_url = 0;
     m_version = 0;
+    m_content_length = 0;
     m_linger = false;
 
     bzero(m_read_buf, READ_BUFFER_SIZE);
@@ -179,40 +180,36 @@ http_conn::HTTP_CODE http_conn::parse_request_line(char * text) {
 
 // 解析HTTP请求的一个头部信息
 http_conn::HTTP_CODE http_conn::parse_headers(char* text) {   
-    // GET /index.html HTTP/1.1
-    m_url = strpbrk(text, " \t");    // 判断第一个字符先出现
-
-    // GET\0/index.html HTTP/1.1
-    *m_url++ = '\0';
-
-    char * method = text;
-    if( strcasecmp(method, "GET") == 0) {
-        m_method = GET;
+    // 遇到空行，表示头部字段解析完毕
+    if( text[0] == '\0' ) {
+        // 如果HTTP请求有消息体，则还需要读取m_content_length字节的消息体，
+        // 状态机转移到CHECK_STATE_CONTENT状态
+        if ( m_content_length != 0 ) {
+            m_check_state = CHECK_STATE_CONTENT;
+            return NO_REQUEST;
+        }
+        // 否则说明我们已经得到了一个完整的HTTP请求
+        return GET_REQUEST;
+    } else if ( strncasecmp( text, "Connection:", 11 ) == 0 ) {
+        // 处理Connection 头部字段  Connection: keep-alive
+        text += 11;
+        text += strspn( text, " \t" );
+        if ( strcasecmp( text, "keep-alive" ) == 0 ) {
+            m_linger = true;
+        }
+    } else if ( strncasecmp( text, "Content-Length:", 15 ) == 0 ) {
+        // 处理Content-Length头部字段
+        text += 15;
+        text += strspn( text, " \t" );
+        m_content_length = atol(text);
+    } else if ( strncasecmp( text, "Host:", 5 ) == 0 ) {
+        // 处理Host头部字段
+        text += 5;
+        text += strspn( text, " \t" );
+        m_host = text;
     } else {
-        return BAD_REQUEST;
+        printf( "oop! unknow header %s\n", text );
     }
-
-    //  /index.html HTTP/1.1
-    m_version = strpbrk(m_url, "\t");
-    if(!m_version) {
-        return BAD_REQUEST;
-    }
-    *m_version++ = '\0';
-    if(strcasecmp(m_version, "HTTP/1.1") != 0) {
-        return BAD_REQUEST;
-    }
-
-    if(strncasecmp(m_url, "http://", 7) == 0) {
-        m_url += 7;
-        m_url = strchr(m_url, '/'); //  /index.html
-    }
-
-    if(!m_url || m_url[0] != '/') {
-        return BAD_REQUEST;
-    }
-
-    m_check_state = CHECK_STATE_HEADER; // 主状态机检查状态变成检查请求头
-
     return NO_REQUEST;
 }
 

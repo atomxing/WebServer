@@ -71,14 +71,15 @@ private:
     int m_socketfd;         // 该HTTP连接的socket
     sockaddr_in m_address;  // 通信的socket地址
     char m_read_buf[READ_BUFFER_SIZE]; // 读缓冲区
-    int m_read_idx;       // 标识读缓冲区已经读入的客户端数据的最后一个字节的位置
+    int m_read_idx;         // 标识读缓冲区已经读入的客户端数据的最后一个字节的位置
 
-    int m_checked_idx;    // 当前正在分析的字符在读缓冲区的位置
+    int m_checked_idx;      // 当前正在分析的字符在读缓冲区的位置
     int m_start_line;       // 当前正在解析的行的起始位置
-    char * m_url;           // 请求目标文件的文件名
-    char * m_version;       // 协议版本，只支持HTTP1.1
+    char* m_url;            // 请求目标文件的文件名
+    char* m_version;        // 协议版本，只支持HTTP1.1
     METHOD m_method;        // 请求方法
-    char * m_host;          // 主机名
+    char* m_host;           // 主机名
+    int m_content_length;   // HTTP请求的消息总长度
     bool m_linger;          // HTTP请求是否保持连接
 
     CHECK_STATE m_check_state;  // 主状态机当前所处的状态
