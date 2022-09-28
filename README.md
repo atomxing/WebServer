@@ -46,7 +46,7 @@ make
 ./webbench-1.5/webbench -c 10000 -t 10 http://ip:port/
 ```
 * 测试环境: Ubuntu:20.04 cpu:R5-3600X 内存:32G
-* QPS 15000+
+* QPS 50000+
 
 
 ---
