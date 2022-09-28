@@ -1,5 +1,5 @@
 ### 使用
-需要先配置好对应的数据库
+使用前需要先配置好对应的数据库
 ```bash
 // 建立yourdb库
 create database ylxdb;
